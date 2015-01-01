@@ -5,7 +5,18 @@ $(document).ready( function() {
 		// get the value of the tags the user submitted
 		var tags = $(this).find("input[name='tags']").val();
 		getUnanswered(tags);
+		
+		
 	});
+
+	$('.inspiration-getter').submit( function(event){
+		// zero out results if previous search has run
+		$('.results').html('');
+		// get the value of the tags user answered
+		var tag = $(this).find("input[name='answerers']").val();
+		topAnswerers(tag);
+		});
+		
 });
 
 // this function takes the question object returned by StackOverflow 
@@ -38,6 +49,46 @@ var showQuestion = function(question) {
  							'<p>Reputation: ' + question.owner.reputation + '</p>'
 	);
 
+	return result;
+};
+
+
+var showAnswerers = function(question) {
+	
+	// clone our result template code
+	var result = $('.templates .answerers').clone();
+	
+	// Set the question properties in result
+	var questionElem = result.find('.answerers-text a');
+	questionElem.attr('href', question.user.link);     //link to display name
+	questionElem.text(question.user.display_name);     //user's name as text
+
+	//image
+	var image = result.find('.image img' ); //display image
+	image.attr('src', question.user.profile_image);
+
+ 	// user_id
+	var user_id = result.find('.user_id');
+	user_id.text(question.user.user_id);	
+
+	// user_type
+	var user_type = result.find('.user_type');
+	user_type.text(question.user.user_type);
+
+	// reputation
+	var reputation = result.find('.reputation');
+	reputation.text(question.user.reputation);
+
+	//post count
+	var post_count = result.find('.post_count');
+	post_count.text(question.post_count);	
+
+ 	//score
+	var score = result.find('.score');
+	score.text(question.score);
+
+
+	// return "<p>test</p>";
 	return result;
 };
 
@@ -82,11 +133,36 @@ var getUnanswered = function(tags) {
 			$('.results').append(question);
 		});
 	})
-	.fail(function(jqXHR, error, errorThrown){
+	}
+	
+var topAnswerers = function(tags){
+	console.log(tags);
+		var request = {tagged: tags,
+								site: 'stackoverflow',
+								order: 'desc',
+								sort: 'creation'};
+
+	var result = $.ajax({
+		url: "http://api.stackexchange.com/2.2/tags/"+tags+"/top-answerers/all_time",
+		data: request,
+		dataType: "jsonp",
+		type: "GET",
+		})
+	.done(function(result){
+		console.log(result);
+		var searchResults = showSearchResults(request.tagged, result.items.length);
+
+		$('.search-results').html(searchResults);
+
+		$.each(result.items, function(i, item) {
+			var question = showAnswerers(item);
+			console.log(question);
+			$('.results').append(question);
+		});
+	})
+.fail(function(jqXHR, error, errorThrown){
 		var errorElem = showError(error);
 		$('.search-results').append(errorElem);
 	});
-};
 
-
-
+}
